@@ -1,5 +1,7 @@
 import curses
 import json
+import subprocess
+from time import sleep
 from pathlib import Path
 
 # Permite controlar la terminal (capturar teclas, redibujar pantalla, ...)
@@ -50,6 +52,7 @@ def listar():
         terminal.clear()
         terminal.addstr(0, 0, "HAS ELEGIDO LISTAR")
         elementos = [ruta.parent] + sorted(ruta.iterdir())
+        # Pinta en la pantalla los elementos
         for i, elemento in enumerate(elementos):
             nombre = elemento.name
             if elemento == ruta.parent:
@@ -59,11 +62,31 @@ def listar():
             else:
                 terminal.addstr(i + 2, 0, nombre)
 
+        if ruta.name == "Categorias":
+            # Mostrar opciones de crear / editar / eliminar
+            terminal.addstr(len(elementos)+4,0,"Pulsa la tecla C para crear una nueva categoria")
+
+
+        terminal.addstr(len(elementos)+5,0,f"El elemento seleccionado es:{elementos[seleccion].name} ")
+        terminal.addstr(len(elementos)+6,0,f"El elemento donde me encuentro es: {ruta}")
+
         tecla = terminal.getch()
         if tecla == curses.KEY_DOWN and seleccion < len(elementos) - 1:
             seleccion += 1
         elif tecla == curses.KEY_UP and seleccion > 0:
             seleccion -= 1
+        elif tecla == ord('c') or tecla == ord('C'):
+            # Aqui tenemos que llamar a un script de bash para crear un directorio
+            curses.endwin() # Salir de curses
+            retorno = subprocess.run(["bash","./scripts/prueba.sh", str(ruta), str(elementos[seleccion]), str(elementos[seleccion].name)])
+            #print(f"El retorno es {str(retorno.returncode)}")
+            if retorno.returncode == 20:
+                print("El nombre de la categoría no es correcto")
+                sleep(4)
+            elif retorno.returncode == 0:
+                print("Categoria creada con éxito")
+                sleep(4)
+
         elif tecla == ord('\n'):
             ruta = elementos[seleccion]
             seleccion = 0
